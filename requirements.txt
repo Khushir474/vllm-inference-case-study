@@ -1,0 +1,8 @@
+openai
+anthropic
+pydantic
+pydantic-settings
+python-dotenv
+pandas
+tabulate
+tqdm
