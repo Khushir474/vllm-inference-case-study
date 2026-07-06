@@ -124,6 +124,11 @@ optional supplementary raw-throughput check using vLLM's own benchmark CLI.
 
 ## Status
 
-Pipeline built, not yet run end-to-end. Current plan: pilot with 10
-transcripts per backend to validate the pipeline, then scale up the sample
-size once results look sane.
+Hosted side validated end-to-end: a 10-transcript pilot against Together AI
+got a 100% success rate and 90% JSON validity, with the full
+generate → judge → aggregate → build_report pipeline running clean.
+
+Self-hosted vLLM side is next — the AWS `g6.xlarge` box is being provisioned
+(see `docs/aws_vllm_setup.md`). Once it's reachable, run the same 10-transcript
+pilot with `--backend vllm` to get the first real head-to-head comparison,
+then scale up the sample size once both sides look sane.
