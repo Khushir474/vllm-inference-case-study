@@ -13,7 +13,7 @@ vllm bench serve \
   --backend openai-chat \
   --base-url http://<vllm-host>:8000 \
   --endpoint /v1/chat/completions \
-  --model meta-llama/Llama-3.1-8B-Instruct \
+  --model meta-llama/Meta-Llama-3-8B-Instruct \
   --dataset-name random \
   --num-prompts 200 \
   --request-rate inf

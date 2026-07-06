@@ -8,8 +8,9 @@ from app.clients.judge import AnthropicJudge
 from app.config import settings
 
 
-def run(raw_path: Path) -> Path:
-    judge = AnthropicJudge(api_key=settings.anthropic_api_key, model=settings.judge_model)
+def run(raw_path: Path, judge_model: str | None = None) -> Path:
+    judge_model = judge_model or settings.judge_model
+    judge = AnthropicJudge(api_key=settings.anthropic_api_key, model=judge_model)
 
     rows = [json.loads(line) for line in raw_path.read_text().splitlines()]
 
@@ -19,6 +20,7 @@ def run(raw_path: Path) -> Path:
 
     with open(out_path, "w") as f:
         for row in tqdm(rows, desc="judging"):
+            row["judge_model"] = judge_model
             if row["json_valid"]:
                 judgment = judge.score(row["transcript_text"], row["raw_output"])
                 row["quality_score"] = judgment.score
@@ -30,15 +32,20 @@ def run(raw_path: Path) -> Path:
                 row["judge_error"] = "skipped: source row was not valid JSON"
             f.write(json.dumps(row) + "\n")
 
-    print(f"wrote {len(rows)} judged rows to {out_path}")
+    print(f"wrote {len(rows)} judged rows to {out_path} (judge model: {judge_model})")
     return out_path
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("raw_path", type=Path, help="path to a results/raw/*.jsonl file from run_benchmark.py")
+    parser.add_argument(
+        "--judge-model",
+        default=None,
+        help="override JUDGE_MODEL from .env, e.g. a cheaper model for large-scale judging runs",
+    )
     args = parser.parse_args()
-    run(args.raw_path)
+    run(args.raw_path, judge_model=args.judge_model)
 
 
 if __name__ == "__main__":
