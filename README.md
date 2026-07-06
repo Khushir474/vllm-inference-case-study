@@ -1,4 +1,4 @@
-# vLLM Case Study: 
+# vLLM Case Study:  
 ## Hosted API vs Self-Hosted vLLM for Call-Transcript QA
 
 A benchmark comparing a **hosted inference API** against a **self-hosted vLLM
