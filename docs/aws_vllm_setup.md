@@ -7,7 +7,9 @@
 | **Instance type** | `g6.xlarge` — 1x NVIDIA L4 (24GB VRAM), 4 vCPU, 16GB RAM |
 | **On-demand price** | ~$0.805/hr (us-east-1, check [AWS pricing](https://aws.amazon.com/ec2/pricing/on-demand/) for current rate) |
 | **Storage** | 100GB gp3 EBS (model weights are ~16GB in bf16; leave room for the vLLM/CUDA install and logs) |
-| **AMI** | "Deep Learning OSS Nvidia Driver AMI GPU PyTorch 2.0.1 (Amazon Linux 2)" — exact AMI names/versions in AWS's catalog change often; any recent "GPU PyTorch" AMI (Amazon Linux 2 or Ubuntu) works, it ships NVIDIA drivers + CUDA preinstalled so you skip driver setup. Avoid "Neuron" AMIs — those target AWS's own Inferentia/Trainium chips, not the NVIDIA L4 in `g6.xlarge` |
+| **AMI** | "Deep Learning OSS Nvidia Driver AMI GPU PyTorch 2.7 (Ubuntu 22.04)" — NVIDIA Driver R570, CUDA 12.8, explicitly documented G6 support. Don't use the 2.0.1 (Amazon Linux 2) variant — its own listing only names P3/P4/G5 as supported, no G6, so it's a real risk of the driver not recognizing the L4. Avoid "Neuron" AMIs entirely — those target AWS's own Inferentia/Trainium chips, not the NVIDIA L4 in `g6.xlarge` |
+
+**Note on cost**: no AWS GPU instance family (g4dn, g5, g6, p3, p4, ...) is free-tier eligible — free tier only covers small CPU instances. Billing must be enabled on the account before launching any GPU instance, regardless of which one you pick. See "Staying on budget" below for keeping the actual spend small.
 
 Why `g6.xlarge` over `g5.xlarge`: both have 24GB VRAM, comfortably enough for
 Llama-3-8B-Instruct in bf16 (~18GB including KV cache headroom), but the
@@ -22,18 +24,20 @@ full-precision), so stick with bf16 on `g6.xlarge` for the baseline comparison.
 
 ## Setup steps
 
-1. **Launch the instance**: EC2 console → Launch instance → AMI: search
-   "pytorch" in the launch wizard and pick a "Deep Learning ... GPU PyTorch"
-   result (Amazon Linux 2 is fine) → type `g6.xlarge` → 100GB gp3 root volume.
+1. **Launch the instance**: if the AMI doesn't show up by name in Quick
+   Start, find its AMI ID for your region on
+   [AWS's release notes page](https://docs.aws.amazon.com/dlami/latest/devguide/aws-deep-learning-ami-gpupt27oss-ul2204-2026-01-20.html)
+   and paste that ID into **Launch Instance → Application and OS Images →
+   Browse more AMIs** — it'll surface under the **Community AMIs** tab.
+   Then: type `g6.xlarge` → 100GB gp3 root volume.
 2. **Security group**: allow SSH (22) and a custom TCP rule for port 8000,
    both restricted to *your* IP only — don't open 8000 to `0.0.0.0/0`, that's
    an unauthenticated LLM endpoint on the open internet.
-3. **SSH in and install vLLM** (login user is `ec2-user` on Amazon Linux 2,
-   `ubuntu` if you end up on an Ubuntu-based AMI instead):
+3. **SSH in and install vLLM** (login user is `ubuntu` on this Ubuntu 22.04 AMI):
    ```bash
-   ssh -i your-key.pem ec2-user@<instance-public-ip>
+   ssh -i your-key.pem ubuntu@<instance-public-ip>
    pip install vllm
-   which tmux || sudo yum install -y tmux   # only if tmux isn't preinstalled
+   which tmux || sudo apt-get update && sudo apt-get install -y tmux   # only if tmux isn't preinstalled
    ```
 4. **Get Hugging Face access to Llama-3-8B-Instruct**: accept Meta's
    license on the [model page](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct),
