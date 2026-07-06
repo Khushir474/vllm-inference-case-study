@@ -50,9 +50,20 @@ full-precision), so stick with bf16 on `g6.xlarge` for the baseline comparison.
    tmux new -s vllm
    vllm serve meta-llama/Meta-Llama-3-8B-Instruct \
      --host 0.0.0.0 \
-     --port 8000
+     --port 8000 \
+     --gpu-memory-utilization 0.9 \
+     --max-model-len 8192 \
+     --enforce-eager
    # detach with Ctrl-b d
    ```
+   - `--enforce-eager` skips CUDA graph capture, which otherwise adds a
+     one-time warmup delay to the first few requests — keeps latency
+     numbers consistent from the first request rather than skewed by warmup.
+   - `--max-model-len 8192` is Llama-3 (not 3.1) 8B-Instruct's native context
+     window. Some transcripts in this dataset run up to ~21K characters
+     (~5-6K tokens) — the longest ones plus the system prompt could get
+     close to that ceiling. This applies to the hosted side too, since it's
+     the same base checkpoint, not a vLLM-specific limitation.
 6. **Point this repo at it** — in `.env`:
    ```
    VLLM_BASE_URL=http://<instance-public-ip>:8000/v1
