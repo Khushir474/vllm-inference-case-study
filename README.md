@@ -54,7 +54,7 @@ app/
 docs/
   setup_notes_template.md      # manual log of setup friction per backend
   vllm_bench_serve.md          # optional supplementary raw-throughput check
-  aws_vllm_setup.md             # AWS GPU instance specs + step-by-step vLLM setup
+  runpod_vllm_setup.md          # RunPod GPU pod specs + step-by-step vLLM setup
 ```
 
 ## Backends
@@ -69,11 +69,12 @@ docs/
 - **Self-hosted**: vLLM serving `meta-llama/Meta-Llama-3-8B-Instruct` on a
   cloud GPU box you provision (this repo doesn't run vLLM locally — this
   Mac is arm64 with no CUDA GPU). Point `VLLM_BASE_URL` in `.env` at it once
-  it's reachable. See `docs/aws_vllm_setup.md` for exact AWS instance specs
-  (`g6.xlarge`, ~$0.805/hr), AMI, security group, and setup steps — including
-  budget guidance, since the GPU instance is the only real cost risk in this
-  study (Together AI + Anthropic judge costs stay under ~$10 even at 1,000
-  transcripts).
+  it's reachable. See `docs/runpod_vllm_setup.md` for exact RunPod GPU pod
+  specs (~$0.39/hr L4, no quota/approval process), setup steps, and budget
+  guidance — the GPU is the only real cost risk in this study (Together AI +
+  Anthropic judge costs stay under ~$10 even at 1,000 transcripts). AWS was
+  the original plan but got stuck behind a GPU vCPU quota request that was
+  denied twice; RunPod has no equivalent approval gate.
 
 ## Setup
 
@@ -128,7 +129,8 @@ Hosted side validated end-to-end: a 10-transcript pilot against Together AI
 got a 100% success rate and 90% JSON validity, with the full
 generate → judge → aggregate → build_report pipeline running clean.
 
-Self-hosted vLLM side is next — the AWS `g6.xlarge` box is being provisioned
-(see `docs/aws_vllm_setup.md`). Once it's reachable, run the same 10-transcript
-pilot with `--backend vllm` to get the first real head-to-head comparison,
-then scale up the sample size once both sides look sane.
+Self-hosted vLLM side is next — a RunPod GPU pod is being provisioned (see
+`docs/runpod_vllm_setup.md`, after AWS's GPU quota request was denied twice).
+Once it's reachable, run the same 10-transcript pilot with `--backend vllm`
+to get the first real head-to-head comparison, then scale up the sample size
+once both sides look sane.
