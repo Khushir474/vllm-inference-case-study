@@ -7,7 +7,7 @@
 | **Instance type** | `g6.xlarge` — 1x NVIDIA L4 (24GB VRAM), 4 vCPU, 16GB RAM |
 | **On-demand price** | ~$0.805/hr (us-east-1, check [AWS pricing](https://aws.amazon.com/ec2/pricing/on-demand/) for current rate) |
 | **Storage** | 100GB gp3 EBS (model weights are ~16GB in bf16; leave room for the vLLM/CUDA install and logs) |
-| **AMI** | "Deep Learning AMI GPU PyTorch" (Ubuntu 22.04) from the AWS Marketplace — comes with NVIDIA drivers, CUDA, and Docker preinstalled, so you skip driver setup |
+| **AMI** | "Deep Learning OSS Nvidia Driver AMI GPU PyTorch 2.0.1 (Amazon Linux 2)" — exact AMI names/versions in AWS's catalog change often; any recent "GPU PyTorch" AMI (Amazon Linux 2 or Ubuntu) works, it ships NVIDIA drivers + CUDA preinstalled so you skip driver setup. Avoid "Neuron" AMIs — those target AWS's own Inferentia/Trainium chips, not the NVIDIA L4 in `g6.xlarge` |
 
 Why `g6.xlarge` over `g5.xlarge`: both have 24GB VRAM, comfortably enough for
 Llama-3-8B-Instruct in bf16 (~18GB including KV cache headroom), but the
@@ -22,16 +22,18 @@ full-precision), so stick with bf16 on `g6.xlarge` for the baseline comparison.
 
 ## Setup steps
 
-1. **Launch the instance**: EC2 console → Launch instance → AMI: "Deep
-   Learning AMI GPU PyTorch (Ubuntu 22.04)" → type `g6.xlarge` → 100GB gp3
-   root volume.
+1. **Launch the instance**: EC2 console → Launch instance → AMI: search
+   "pytorch" in the launch wizard and pick a "Deep Learning ... GPU PyTorch"
+   result (Amazon Linux 2 is fine) → type `g6.xlarge` → 100GB gp3 root volume.
 2. **Security group**: allow SSH (22) and a custom TCP rule for port 8000,
    both restricted to *your* IP only — don't open 8000 to `0.0.0.0/0`, that's
    an unauthenticated LLM endpoint on the open internet.
-3. **SSH in and install vLLM**:
+3. **SSH in and install vLLM** (login user is `ec2-user` on Amazon Linux 2,
+   `ubuntu` if you end up on an Ubuntu-based AMI instead):
    ```bash
-   ssh -i your-key.pem ubuntu@<instance-public-ip>
+   ssh -i your-key.pem ec2-user@<instance-public-ip>
    pip install vllm
+   which tmux || sudo yum install -y tmux   # only if tmux isn't preinstalled
    ```
 4. **Get Hugging Face access to Llama-3-8B-Instruct**: accept Meta's
    license on the [model page](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct),
