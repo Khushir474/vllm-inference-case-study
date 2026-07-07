@@ -18,7 +18,7 @@ def sample_transcripts(data_dir: str, n: int, seed: int = 0) -> list[Transcript]
     backends operate on the exact same transcripts, which is required for
     the hosted-vs-vLLM quality/cost comparison to be apples-to-apples.
     """
-    paths = sorted(Path(data_dir).glob("*.json"))
+    paths = sorted(Path(data_dir).rglob("*.json"))
     if not paths:
         raise FileNotFoundError(f"no transcript JSON files found under {data_dir}")
     if n > len(paths):

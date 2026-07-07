@@ -1,9 +1,16 @@
 import time
 from dataclasses import dataclass
 
+import httpx
 from openai import OpenAI
 
 from app.utils.prompts import QA_REPORT_SYSTEM_PROMPT, QA_REPORT_USER_TEMPLATE
+
+# httpx's default connection pool caps at 100 concurrent connections — silently
+# throttling any --concurrency above 100 at the client, not the server. Benchmark
+# concurrency levels beyond 100 need a wider pool or the measurement reflects our
+# own client queuing, not the backend's real capacity.
+_HTTP_CLIENT = httpx.Client(limits=httpx.Limits(max_connections=500, max_keepalive_connections=500))
 
 
 @dataclass
@@ -24,7 +31,7 @@ class OpenAICompatibleClient:
     """
 
     def __init__(self, base_url: str, api_key: str, model: str):
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.client = OpenAI(base_url=base_url, api_key=api_key, http_client=_HTTP_CLIENT)
         self.model = model
 
     def generate_qa_report(self, transcript_text: str) -> GenerationResult:

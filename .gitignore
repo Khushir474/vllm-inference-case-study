@@ -1,8 +1,10 @@
 .env
 /data/*
 /results/*
+/results_naive_vs_vllm/*
 .venv/
 __pycache__/
 *.pyc
 .DS_Store
 *.pem
+id_ed25519.*
